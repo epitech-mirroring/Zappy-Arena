@@ -24,6 +24,10 @@ pipeline {
                         sh 'export PATH=$PATH:$HOME/.bun/bin/bun'
                     }
                 }
+
+                // login to the GitHub Container Registry
+                sh "echo ${GHCR_TOKEN_PSW} | docker login ghcr.io -u ${GHCR_TOKEN_USR} --password-stdin"
+
             }
         }
         stage ('🧪 Tests') {
@@ -73,9 +77,6 @@ pipeline {
         stage('🚀 Deploy') {
             steps {
                 script {
-                    // login to the GitHub Container Registry
-                    sh "echo ${GHCR_TOKEN_PSW} | docker login ghcr.io -u ${GHCR_TOKEN_USR} --password-stdin"
-
                     // Push backend
                     sh "docker push ghcr.io/${IMAGE_NAME_BASE}-back:${IMAGE_VERSION}"
                     if (!IS_PRODUCTION) {
