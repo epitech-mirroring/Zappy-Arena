@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        IS_PRODUCTION = branch 'main'
+        IS_PRODUCTION = true
         APP_ROOT = '/opt/zappy-arena'
         GHCR_TOKEN = credentials('github-packages-token')
         IMAGE_VERSION = '1.00.0'
@@ -10,6 +10,15 @@ pipeline {
     stages {
         stage('📥 Checkout') {
             steps {
+                script {
+                    def isInProduction = env.BRANCH_NAME == 'master'
+                    if (isInProduction) {
+                        IS_PRODUCTION = true
+                    } else {
+                        IS_PRODUCTION = false
+                    }
+                }
+
                 // Clean before checkout
                 cleanWs()
 
