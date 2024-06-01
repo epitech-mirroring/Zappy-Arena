@@ -10,7 +10,7 @@ RUN cd /temp/dev && bun install --frozen-lockfile
 
 RUN mkdir -p /temp/prod
 COPY package.json bun.lockb /temp/prod/
-RUN cd /temp/prod && bun install --frozen-lockfile --production
+RUN cd /temp/prod && bun install --frozen-lockfile
 
 FROM base AS prerelease-backend
 COPY --from=install-backend /temp/dev/node_modules node_modules
