@@ -1,5 +1,8 @@
 FROM ubuntu:latest
 
+# Set bash as the default shell
+SHELL ["/bin/bash", "-c"]
+
 # Install bun
 RUN apt-get update && apt-get install -y curl unzip
 RUN curl -fsSL https://bun.sh/install | bash
