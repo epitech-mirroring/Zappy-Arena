@@ -58,7 +58,7 @@ pipeline {
                     }
 
                     // Build frontend
-                    sh "export NODE_ENV=${NODE_ENV} && cd frontend && docker build -t ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} .
+                    sh "export NODE_ENV=${NODE_ENV} && cd frontend && docker build -t ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ."
                     sh "docker tag ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ghcr.io/${IMAGE_NAME_BASE}-front:${IMAGE_VERSION}"
                     if (!IS_PRODUCTION) {
                         sh "docker tag ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ${IMAGE_NAME_BASE}-front:latest-snapshot"
