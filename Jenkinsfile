@@ -41,10 +41,13 @@ pipeline {
                 script {
                     if (!IS_PRODUCTION) {
                         IMAGE_VERSION += "-snapshot"
+                        NODE_ENV = 'development'
+                    } else {
+                        NODE_ENV = 'production'
                     }
 
                     // Build backend
-                    sh "cd backend && docker build -t ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ."
+                    sh "export NODE_ENV=${NODE_ENV} && cd backend && docker build -t ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ."
                     sh "docker tag ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ghcr.io/${IMAGE_NAME_BASE}-back:${IMAGE_VERSION}"
                     if (!IS_PRODUCTION) {
                         sh "docker tag ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ${IMAGE_NAME_BASE}-back:latest-snapshot"
@@ -55,7 +58,7 @@ pipeline {
                     }
 
                     // Build frontend
-                    sh "cd frontend && docker build -t ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ."
+                    sh "export NODE_ENV=${NODE_ENV} && cd frontend && docker build -t ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} .
                     sh "docker tag ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ghcr.io/${IMAGE_NAME_BASE}-front:${IMAGE_VERSION}"
                     if (!IS_PRODUCTION) {
                         sh "docker tag ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ${IMAGE_NAME_BASE}-front:latest-snapshot"
