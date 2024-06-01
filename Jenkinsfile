@@ -84,6 +84,11 @@ pipeline {
             }
         }
         stage('🚀 Deploy') {
+            when {
+                expression {
+                    env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'develop'
+                }
+            }
             steps {
                 script {
                     // Push backend
