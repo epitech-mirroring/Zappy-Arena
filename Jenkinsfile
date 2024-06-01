@@ -15,6 +15,15 @@ pipeline {
 
                 // Clone the repository
                 checkout scm
+
+                script {
+                    // Check bun is installed
+                    def bun = sh(script: 'bun --version', returnStatus: true)
+                    if (bun != 0) {
+                        sh 'curl -fsSL https://bun.sh/install | bash'
+                        sh 'export PATH=$PATH:$HOME/.bun/bin/bun'
+                    }
+                }
             }
         }
         stage ('🧪 Tests') {
