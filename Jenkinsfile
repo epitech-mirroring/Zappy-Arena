@@ -11,7 +11,7 @@ pipeline {
         stage('📥 Checkout') {
             steps {
                 script {
-                    def isInProduction = env.BRANCH_NAME == 'master'
+                    def isInProduction = env.BRANCH_NAME == 'main'
                     if (isInProduction) {
                         IS_PRODUCTION = true
                     } else {
