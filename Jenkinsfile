@@ -97,9 +97,9 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'aeserv-jenkins-usr', usernameVariable: 'AESERV_JENKINS_USR', passwordVariable: 'AESERV_JENKINS_PSW'),
                                      string(credentialsId: 'aeserv-jenkins-ip', variable: 'AESERV_JENKINS_IP')]) {
                         if (IS_PRODUCTION) {
-                            sh "sshpass -p ${AESERV_JENKINS_PSW} ssh -o StrictHostKeyChecking=no ${AESERV_JENKINS_USR}@${AESERV_JENKINS_IP} 'cd ${APP_ROOT}/production && docker-compose pull && docker-compose up -d'"
+                            sh "sshpass -p ${AESERV_JENKINS_PSW} ssh -o StrictHostKeyChecking=no ${AESERV_JENKINS_USR}@${AESERV_JENKINS_IP} -p 42 'cd ${APP_ROOT}/production && docker-compose pull && docker-compose up -d'"
                         } else {
-                            sh "sshpass -p ${AESERV_JENKINS_PSW} ssh -o StrictHostKeyChecking=no ${AESERV_JENKINS_USR}@${AESERV_JENKINS_IP} 'cd ${APP_ROOT}/staging && docker-compose pull && docker-compose up -d'"
+                            sh "sshpass -p ${AESERV_JENKINS_PSW} ssh -o StrictHostKeyChecking=no ${AESERV_JENKINS_USR}@${AESERV_JENKINS_IP} -p 42 'cd ${APP_ROOT}/staging && docker-compose pull && docker-compose up -d'"
                         }
                     }
                 }
