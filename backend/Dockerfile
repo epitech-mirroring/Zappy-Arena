@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
 # Install bun
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get install -y curl unzip
 RUN curl -fsSL https://bun.sh/install | bash
 
 # Copy the project
