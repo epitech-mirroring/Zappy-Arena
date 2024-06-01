@@ -93,8 +93,6 @@ pipeline {
                         sh "docker push ghcr.io/${IMAGE_NAME_BASE}-front:latest"
                     }
 
-                    sh 'sudo apt-get install sshpass -y'
-
                     // Restart the service
                     withCredentials([usernamePassword(credentialsId: 'aeserv-jenkins-usr', usernameVariable: 'AESERV_JENKINS_USR', passwordVariable: 'AESERV_JENKINS_PSW'),
                                      string(credentialsId: 'aeserv-jenkins-ip', variable: 'AESERV_JENKINS_IP')]) {
