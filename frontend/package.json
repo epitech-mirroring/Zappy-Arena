@@ -7,7 +7,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "echo \"Warning: no test specified\" && exit 0"
   },
   "dependencies": {
     "nuxt": "^3.11.2",
