@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String            @id @default(cuid())
+  email           String            @unique
+  name            String?
+  password        String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  groupId         String?
+  group           Group?            @relation("GroupUsers", fields: [groupId], references: [id])
+  Token           Token[]
+  notifications   Notification[]
+  groupInvitation GroupInvitation[]
+}
+
+model Token {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Bot {
+  id        String     @id @default(cuid())
+  name      String
+  createdAt DateTime   @default(now())
+  leagueId  String
+  league    League     @relation("LeagueBots", fields: [leagueId], references: [id])
+  matches   BotMatch[]
+  groupId   String
+  group     Group      @relation("GroupBots", fields: [groupId], references: [id])
+}
+
+model BotMatch {
+  id      String @id @default(cuid())
+  botId   String
+  score   Int
+  bot     Bot    @relation(fields: [botId], references: [id])
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id])
+}
+
+model League {
+  id         String  @id @default(cuid())
+  name       String  @unique
+  entryScore Int     @default(0)
+  maxScore   Int
+  bots       Bot[]   @relation("LeagueBots")
+  Match      Match[]
+}
+
+model Match {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  leagueId  String
+  league    League     @relation(fields: [leagueId], references: [id])
+  bots      BotMatch[]
+}
+
+model Group {
+  id        String            @id @default(cuid())
+  name      String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  users     User[]            @relation("GroupUsers")
+  bots      Bot[]             @relation("GroupBots")
+  invites   GroupInvitation[]
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  message     String
+  redirectUrl String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  read        Boolean  @default(false)
+  type        String
+  icon        String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model GroupInvitation {
+  id        String   @id @default(cuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
