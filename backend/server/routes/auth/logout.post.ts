@@ -1,8 +1,8 @@
-import {setResponseStatus} from "h3";
+import {getHeader, setResponseStatus} from "h3";
 import {prisma} from "~/database";
 
 export default eventHandler(async (event) => {
-    const auth = event.headers['authorization'];
+    const auth = getHeader(event, 'Authorization');
 
     if (!auth) {
         setResponseStatus(event, 401);

@@ -4,12 +4,29 @@ import {Bot, Group, League, User} from "@prisma/client";
 
 export default eventHandler(async (event) => {
     const groupId = getRouterParam(event, 'group_id');
-    const group: (Group & {members: User[], bots: (Bot & {league: League})[], bestLeague: League }) = await prisma.group.findFirst({
+    if (!groupId) {
+        setResponseStatus(event, 400);
+        return {
+            error: 'Invalid group id',
+            message: 'Group id is required'
+        };
+    }
+
+    const g: Group = await prisma.group.findFirst({
         where: {
             id: groupId
         }
-    }) as any;
+    }) as Group;
 
+    if (!g) {
+        setResponseStatus(event, 404);
+        return {
+            error: 'Group not found',
+            message: `Group with id ${groupId} not found`
+        };
+    }
+
+    const group: Group & {members: User[], bots: (Bot & {league: League})[], bestLeague: League } = g as any;
     group.members = await prisma.user.findMany({
         where: {
             groupId: group.id

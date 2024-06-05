@@ -1,5 +1,7 @@
 import {prisma} from "~/database";
 import {readBody, setResponseStatus} from "h3";
+import jwt from "jsonwebtoken";
+import {TOKEN_EXPIRATION_HOURS} from "~/composables/users";
 
 export default eventHandler(async (event) => {
     const body = await readBody(event);
@@ -49,10 +51,15 @@ export default eventHandler(async (event) => {
         };
     }
 
+    const token = jwt.sign({userId: user.id}, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRATION
+    });
+
     const newToken = await prisma.token.create({
         data: {
             userId: user.id,
-            token: Math.random().toString(36).substring(2)
+            token: token,
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * TOKEN_EXPIRATION_HOURS)
         }
     });
 
