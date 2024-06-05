@@ -18,7 +18,7 @@ COPY . .
 # Expose environment variables
 ENV DATABASE_URL=""
 ENV JWT_SECRET=""
-ENV JWT_EXPIRATION=""
+ENV JWT_EXPIRATION="90d"
 ENV POSTHOG_API_KEY=""
 
 RUN bun run build

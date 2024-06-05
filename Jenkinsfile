@@ -3,6 +3,9 @@ pipeline {
     environment {
         APP_ROOT = '/opt/zappy-arena'
         GHCR_TOKEN = credentials('github-packages-token')
+        POSTHOG_TOKEN = credentials('posthog_api_key')
+        JWT_SECRET = credentials('jwt_secret')
+        DATABASE_URL = credentials('database_url')
         IMAGE_VERSION = '1.00.0'
         IMAGE_NAME_BASE = 'epitech-mirroring/zappy-arena'
     }
@@ -45,7 +48,7 @@ pipeline {
                     NODE_ENV = 'production'
 
                     // Build backend
-                    sh "export NODE_ENV=${NODE_ENV} && cd backend && docker build -t ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ."
+                    sh "export NODE_ENV=${NODE_ENV} DATABASE_URL=${DATABASE_URL} JWT_SECRET=${JWT_SECRET} POSTHOG_API_KEY=${POSTHOG_TOKEN} && cd backend && docker build -t ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ."
                     sh "docker tag ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ghcr.io/${IMAGE_NAME_BASE}-back:${IMAGE_VERSION}"
                     sh "docker tag ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ghcr.io/${IMAGE_NAME_BASE}-back:latest"
                     sh "docker tag ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ${IMAGE_NAME_BASE}-back:latest"
