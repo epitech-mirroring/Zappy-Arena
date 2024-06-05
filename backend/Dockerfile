@@ -15,6 +15,11 @@ RUN cd /temp/prod && bun install --frozen-lockfile
 FROM base AS prerelease-backend
 COPY --from=install-backend /temp/dev/node_modules node_modules
 COPY . .
+# Expose environment variables
+ENV DATABASE_URL=""
+ENV JWT_SECRET=""
+ENV JWT_EXPIRATION=""
+ENV POSTHOG_API_KEY=""
 
 RUN bun run build
 
