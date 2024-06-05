@@ -1,5 +1,6 @@
 import {User} from "@prisma/client";
 import {prisma} from "~/database";
+import {client} from "~/posthog";
 
 export type NotificationType = 'info' | 'warning' | 'error' | 'success';
 
@@ -9,6 +10,17 @@ export type NotificationParams = {
 }
 
 export const sendNotification = async (target: User, message: string, url?: string, params?: NotificationParams) => {
+
+    client.capture({
+        distinctId: target.id,
+        event: 'notification',
+        properties: {
+            message,
+            url,
+            params
+        }
+    });
+
     await prisma.notification.create({
         data: {
             userId: target.id,

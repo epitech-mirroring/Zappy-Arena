@@ -1,6 +1,7 @@
 import {prisma} from "~/database";
 import {setResponseStatus} from "h3";
 import {League, Match} from "@prisma/client";
+import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     // Get the name or id from the path
@@ -13,7 +14,23 @@ export default eventHandler(async (event) => {
         }
     }) as any;
 
+    client.capture({
+        distinctId: 'anonymous',
+        event: 'league_info',
+        properties: {
+            league_id: league.id
+        }
+    })
+
     if (!league) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'league_info_error',
+            properties: {
+                error: 'League not found',
+                reason: `League with ${isId ? 'id' : 'name'} ${idOrName} not found`
+            }
+        })
         setResponseStatus(event, 404);
         return {
             error: 'League not found',
@@ -32,6 +49,13 @@ export default eventHandler(async (event) => {
         return match;
     });
 
+    client.capture({
+        distinctId: 'anonymous',
+        event: 'league_info_success',
+        properties: {
+            league_id: league.id
+        }
+    })
     setResponseStatus(event,200);
     return league;
 });

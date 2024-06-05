@@ -1,6 +1,7 @@
 import {prisma} from "~/database";
 import {getRouterParam, setResponseStatus} from "h3";
 import {Bot, Group, League, User} from "@prisma/client";
+import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const groupId = getRouterParam(event, 'group_id');
@@ -12,6 +13,14 @@ export default eventHandler(async (event) => {
         };
     }
 
+    client.capture({
+        distinctId: 'anonymous',
+        event: 'group_info',
+        properties: {
+            groupId
+        }
+    });
+
     const g: Group = await prisma.group.findFirst({
         where: {
             id: groupId
@@ -19,6 +28,14 @@ export default eventHandler(async (event) => {
     }) as Group;
 
     if (!g) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'group_info_error',
+            properties: {
+                error: 'Group not found',
+                reason: `Group with id ${groupId} not found`
+            }
+        });
         setResponseStatus(event, 404);
         return {
             error: 'Group not found',
@@ -68,6 +85,13 @@ export default eventHandler(async (event) => {
        return bot;
     });
 
+    client.capture({
+        distinctId: 'anonymous',
+        event: 'group_info_success',
+        properties: {
+            groupId
+        }
+    });
     setResponseStatus(event,200);
     return group;
 });

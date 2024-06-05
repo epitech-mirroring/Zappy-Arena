@@ -4,6 +4,7 @@ import {ErrorResponse, login} from "~/composables/users";
 import {prisma} from "~/database";
 import {inviteInGroup} from "~/composables/groups";
 import {sendNotification} from "~/composables/notifications";
+import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const body = await readBody(event);
@@ -13,7 +14,24 @@ export default eventHandler(async (event) => {
     }
     const user = loginResult as User;
 
+
+    client.capture({
+        distinctId: user.id,
+        event: 'group_invite',
+        properties: {
+            body
+        }
+    });
+
     if (!body) {
+        client.capture({
+            distinctId: user.id,
+            event: 'group_invite_error',
+            properties: {
+                error: 'Invalid body',
+                reason: 'Body is required'
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Invalid body',
@@ -24,6 +42,14 @@ export default eventHandler(async (event) => {
     const {email} = body as {email: string};
 
     if (!email) {
+        client.capture({
+            distinctId: user.id,
+            event: 'group_invite_error',
+            properties: {
+                error: 'Invalid body',
+                reason: 'Email is required'
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Invalid body',
@@ -32,6 +58,14 @@ export default eventHandler(async (event) => {
     }
 
     if (!user.groupId) {
+        client.capture({
+            distinctId: user.id,
+            event: 'group_invite_error',
+            properties: {
+                error: 'Invalid group',
+                reason: 'You must be in a group to invite users'
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Invalid group',
@@ -52,6 +86,14 @@ export default eventHandler(async (event) => {
     });
 
     if (!targetUser) {
+        client.capture({
+            distinctId: user.id,
+            event: 'group_invite_error',
+            properties: {
+                error: 'User not found',
+                reason: 'User with email not found'
+            }
+        });
         setResponseStatus(event, 404);
         return {
             error: 'User not found',
@@ -60,6 +102,15 @@ export default eventHandler(async (event) => {
     }
 
     if (targetUser.groupId) {
+        client.capture({
+            distinctId: user.id,
+            event: 'group_invite_error',
+            properties: {
+                error: 'User already in group',
+                reason: 'User is already in a group',
+                targetUserId: targetUser.id
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'User already in group',
@@ -68,6 +119,14 @@ export default eventHandler(async (event) => {
     }
 
     if (await inviteInGroup(targetUser, userGroup)) {
+        client.capture({
+            distinctId: user.id,
+            event: 'group_invite_success',
+            properties: {
+                targetUserId: targetUser.id,
+                groupId: userGroup.id
+            }
+        });
         await sendNotification(user, 'Invitation sent', '/groups/invites', {type: 'success', icon: 'check'});
 
         setResponseStatus(event, 200);
@@ -75,6 +134,16 @@ export default eventHandler(async (event) => {
             message: 'Invitation sent'
         };
     } else {
+        client.capture({
+            distinctId: user.id,
+            event: 'group_invite_error',
+            properties: {
+                error: 'Invitation failed',
+                reason: 'Invitation failed',
+                targetUserId: targetUser.id,
+                groupId: userGroup.id
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Invitation failed',

@@ -2,6 +2,7 @@ import {User} from "@prisma/client";
 import {prisma} from "~/database";
 import {EventHandlerRequest, getHeader, H3Event} from "h3";
 import jwt from "jsonwebtoken";
+import {client} from "~/posthog";
 
 export const TOKEN_EXPIRATION_HOURS = 24 * 3;
 
@@ -27,7 +28,22 @@ export const findUserById = async (userId: string): Promise<User | null> => {
 export const login = async (event: H3Event<EventHandlerRequest>): Promise<User | ErrorResponse> => {
     let authorization = getHeader(event, 'Authorization');
 
+    client.capture({
+        event: 'login_attempt',
+        distinctId: 'anonymous',
+        properties: {
+            authorization
+        }
+    });
+
     if (!authorization) {
+        client.capture({
+            event: 'login_error',
+            distinctId: 'anonymous',
+            properties: {
+                error: 'No authorization header provided'
+            }
+        });
         setResponseStatus(event, 401);
         return {
             error: LoginError.TokenInvalid,
@@ -36,6 +52,13 @@ export const login = async (event: H3Event<EventHandlerRequest>): Promise<User |
     }
     let tmp = authorization.split(' ');
     if (tmp.length !== 2 || tmp[0] !== 'Bearer') {
+        client.capture({
+            event: 'login_error',
+            distinctId: 'anonymous',
+            properties: {
+                error: 'Invalid authorization header'
+            }
+        });
         setResponseStatus(event, 401);
         return {
             error: LoginError.TokenInvalid,
@@ -46,6 +69,13 @@ export const login = async (event: H3Event<EventHandlerRequest>): Promise<User |
 
 
     if (!token) {
+        client.capture({
+            event: 'login_error',
+            distinctId: 'anonymous',
+            properties: {
+                error: 'No authorization header provided'
+            }
+        });
         setResponseStatus(event, 401);
         return {
             error: LoginError.TokenInvalid,
@@ -56,12 +86,28 @@ export const login = async (event: H3Event<EventHandlerRequest>): Promise<User |
     const loginResult = await _login(token);
 
     if (typeof loginResult === 'string') {
+        client.capture({
+            event: 'login_error',
+            distinctId: 'anonymous',
+            properties: {
+                error: 'Invalid token',
+                reason: loginResult
+            }
+        });
         setResponseStatus(event, 401);
         return {
             error: loginResult,
             message: 'Invalid token'
         }
     }
+
+    client.capture({
+        event: 'login_success',
+        distinctId: loginResult.id,
+        properties: {
+            email: loginResult.email
+        }
+    });
 
     return loginResult;
 }

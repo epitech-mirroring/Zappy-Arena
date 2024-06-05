@@ -1,10 +1,25 @@
 import {getHeader, setResponseStatus} from "h3";
 import {prisma} from "~/database";
+import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const auth = getHeader(event, 'Authorization');
 
+    client.capture({
+        distinctId: 'anonymous',
+        event: 'logout',
+        properties: {
+            auth
+        }
+    });
     if (!auth) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'logout_error',
+            properties: {
+                error: 'No authorization header provided'
+            }
+        });
         setResponseStatus(event, 401);
         return {
             error: 'Unauthorized',
@@ -20,12 +35,24 @@ export default eventHandler(async (event) => {
     });
 
     if (!userToken) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'logout_error',
+            properties: {
+                error: 'Invalid token'
+            }
+        });
         setResponseStatus(event, 401);
         return {
             error: 'Unauthorized',
             message: 'Invalid token'
         };
     }
+
+    client.capture({
+        distinctId: userToken.userId,
+        event: 'logout_success'
+    });
 
     await prisma.token.delete({
         where: {

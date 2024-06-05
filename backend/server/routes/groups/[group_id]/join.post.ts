@@ -3,6 +3,7 @@ import {Group, User} from "@prisma/client";
 import {prisma} from "~/database";
 import {ErrorResponse, login} from "~/composables/users";
 import {joinGroup} from "~/composables/groups";
+import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const groupId = getRouterParam(event, 'group_id');
@@ -14,6 +15,14 @@ export default eventHandler(async (event) => {
         };
     }
 
+    client.capture({
+        distinctId: 'anonymous',
+        event: 'group_join',
+        properties: {
+            groupId
+        }
+    });
+
     const g: Group = await prisma.group.findFirst({
         where: {
             id: groupId
@@ -21,6 +30,14 @@ export default eventHandler(async (event) => {
     }) as Group;
 
     if (!g) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'group_join_error',
+            properties: {
+                error: 'Group not found',
+                reason: `Group with id ${groupId} not found`
+            }
+        });
         setResponseStatus(event, 404);
         return {
             error: 'Group not found',
@@ -36,12 +53,28 @@ export default eventHandler(async (event) => {
     const user = loginResult as User;
 
     if (!await joinGroup(user, g)) {
+        client.capture({
+            distinctId: user.id,
+            event: 'group_join_error',
+            properties: {
+                error: 'Failed to join group',
+                reason: `Failed to join group with id ${groupId}`
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Failed to join group',
             message: `Failed to join group with id ${groupId}`
         };
     }
+
+    client.capture({
+        distinctId: user.id,
+        event: 'group_join_success',
+        properties: {
+            group: g
+        }
+    });
 
     setResponseStatus(event, 200);
     return g;

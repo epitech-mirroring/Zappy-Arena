@@ -1,11 +1,27 @@
 import {prisma} from "~/database";
 import {readBody, setResponseStatus} from "h3";
 import jwt from "jsonwebtoken";
-import {TOKEN_EXPIRATION_HOURS} from "~/composables/users";
+import {createTokenForUser, TOKEN_EXPIRATION_HOURS} from "~/composables/users";
+import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const body = await readBody(event);
+
+    client.capture({
+        distinctId: 'anonymous',
+        event: 'login',
+        properties: {
+            body: body
+        }
+    });
     if (!body) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'login_error',
+            properties: {
+                error: 'Invalid body'
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Invalid body',
@@ -14,6 +30,14 @@ export default eventHandler(async (event) => {
     }
 
     if (!body.email) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'login_error',
+            properties: {
+                error: 'Invalid body',
+                reason: 'Email is required'
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Invalid body',
@@ -22,6 +46,14 @@ export default eventHandler(async (event) => {
     }
 
     if (!body.password) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'login_error',
+            properties: {
+                error: 'Invalid body',
+                reason: 'Password is required'
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Invalid body',
@@ -36,6 +68,14 @@ export default eventHandler(async (event) => {
     });
 
     if (!user) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'login_error',
+            properties: {
+                error: 'User not found',
+                reason: 'User with email not found'
+            }
+        });
         setResponseStatus(event, 404);
         return {
             error: 'User not found',
@@ -44,6 +84,13 @@ export default eventHandler(async (event) => {
     }
 
     if (user.password !== body.password) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'login_error',
+            properties: {
+                error: 'Invalid password'
+            }
+        });
         setResponseStatus(event, 401);
         return {
             error: 'Invalid password',
@@ -55,17 +102,18 @@ export default eventHandler(async (event) => {
         expiresIn: process.env.JWT_EXPIRATION
     });
 
-    const newToken = await prisma.token.create({
-        data: {
-            userId: user.id,
-            token: token,
-            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * TOKEN_EXPIRATION_HOURS)
+    const newToken = await createTokenForUser(user.id);
+
+    client.capture({
+        distinctId: user.id,
+        event: 'login_success',
+        properties: {
+            email: user.email
         }
     });
 
-
     setResponseStatus(event,200);
     return {
-        token: newToken.token
+        token: newToken,
     }
 });

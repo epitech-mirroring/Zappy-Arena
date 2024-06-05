@@ -1,14 +1,31 @@
 import {createTokenForUser} from "~/composables/users";
 import {getHeader} from "h3";
 import {prisma} from "~/database";
+import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
    // Parse the body from the event
     const body = await readBody(event);
     const authorization = getHeader(event, 'Authorization');
 
+    client.capture({
+        distinctId: 'anonymous',
+        event: 'register',
+        properties: {
+            body
+        }
+    });
+
     // if authorization header is present, return 401
     if (authorization) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'register_error',
+            properties: {
+                error: 'Unauthorized',
+                reason: 'You are already logged in'
+            }
+        });
         setResponseStatus(event, 401);
         return {
             error: 'Unauthorized',
@@ -18,6 +35,14 @@ export default eventHandler(async (event) => {
 
     // if body is empty, return 400
     if (!body) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'register_error',
+            properties: {
+                error: 'Invalid body',
+                reason: 'Body is required'
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Invalid body',
@@ -27,6 +52,14 @@ export default eventHandler(async (event) => {
 
     // if email is not present in the body, return 400
     if (!body.email) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'register_error',
+            properties: {
+                error: 'Invalid body',
+                reason: 'Email is required'
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Invalid body',
@@ -36,6 +69,14 @@ export default eventHandler(async (event) => {
 
     // if password is not present in the body, return 400
     if (!body.password) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'register_error',
+            properties: {
+                error: 'Invalid body',
+                reason: 'Password is required'
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'Invalid body',
@@ -59,6 +100,14 @@ export default eventHandler(async (event) => {
     });
 
     if (user) {
+        client.capture({
+            distinctId: 'anonymous',
+            event: 'register_error',
+            properties: {
+                error: 'User already exists',
+                reason: 'User with email already exists'
+            }
+        });
         setResponseStatus(event, 400);
         return {
             error: 'User already exists',
@@ -72,6 +121,14 @@ export default eventHandler(async (event) => {
             email: body.email,
             password: body.password,
             name
+        }
+    });
+
+    client.capture({
+        distinctId: newUser.id,
+        event: 'register_success',
+        properties: {
+            user: newUser
         }
     });
 
