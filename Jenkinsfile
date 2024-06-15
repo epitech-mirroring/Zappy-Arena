@@ -9,6 +9,9 @@ pipeline {
         IMAGE_VERSION = '1.00.5'
         IMAGE_NAME_BASE = 'epitech-mirroring/zappy-arena'
     }
+    parameters {
+        string(name: 'IGNORE_DOCKER_CACHE', defaultValue: 'false', description: 'Ignore the docker cache')
+    }
     stages {
         stage('📥 Checkout') {
             steps {
@@ -48,13 +51,21 @@ pipeline {
                     NODE_ENV = 'production'
 
                     // Build backend
-                    sh "export NODE_ENV=${NODE_ENV} DATABASE_URL=${DATABASE_URL} JWT_SECRET=${JWT_SECRET} POSTHOG_API_KEY=${POSTHOG_TOKEN} && cd backend && docker build -t ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ."
+                    if (env.IGNORE_DOCKER_CACHE == 'true') {
+                        sh "export NODE_ENV=${NODE_ENV} DATABASE_URL=${DATABASE_URL} JWT_SECRET=${JWT_SECRET} POSTHOG_API_KEY=${POSTHOG_TOKEN} && cd backend && docker build --no-cache -t ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ."
+                    } else {
+                        sh "export NODE_ENV=${NODE_ENV} DATABASE_URL=${DATABASE_URL} JWT_SECRET=${JWT_SECRET} POSTHOG_API_KEY=${POSTHOG_TOKEN} && cd backend && docker build -t ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ."
+                    }
                     sh "docker tag ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ghcr.io/${IMAGE_NAME_BASE}-back:${IMAGE_VERSION}"
                     sh "docker tag ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ghcr.io/${IMAGE_NAME_BASE}-back:latest"
                     sh "docker tag ${IMAGE_NAME_BASE}-back:${IMAGE_VERSION} ${IMAGE_NAME_BASE}-back:latest"
 
                     // Build frontend
-                    sh "export NODE_ENV=${NODE_ENV} && cd frontend && docker build -t ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ."
+                    if (env.IGNORE_DOCKER_CACHE == 'true') {
+                        sh "export NODE_ENV=${NODE_ENV} && cd frontend && docker build --no-cache -t ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ."
+                    } else {
+                        sh "export NODE_ENV=${NODE_ENV} && cd frontend && docker build -t ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ."
+                    }
                     sh "docker tag ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ghcr.io/${IMAGE_NAME_BASE}-front:${IMAGE_VERSION}"
                     sh "docker tag ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ghcr.io/${IMAGE_NAME_BASE}-front:latest"
                     sh "docker tag ${IMAGE_NAME_BASE}-front:${IMAGE_VERSION} ${IMAGE_NAME_BASE}-front:latest"
