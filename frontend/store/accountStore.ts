@@ -11,7 +11,7 @@ export const useAccount = defineStore('account', {
     }),
     actions: {
         async login(email: string, password: string): Promise<string | null> {
-            const hashedPassword = hashPassword(password)
+            const hashedPassword = await hashPassword(password)
             // Call the backend API to login
             // Save the user and token in the store
             const res = await fetch('https://api.arena.n-king.com/auth/login', {

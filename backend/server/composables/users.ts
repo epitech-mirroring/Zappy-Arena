@@ -183,7 +183,7 @@ export const createTokenForUser = async (user: User): Promise<string> => {
         process.env.JWT_SECRET as string
     )
 
-    const token = await new SignJWT({
+    const token = await new jose.SignJWT({
         id: user.id,
         name: user.name,
         email: user.email,
