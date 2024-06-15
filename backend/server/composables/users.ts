@@ -3,7 +3,6 @@ import {prisma} from "~/database";
 import {EventHandlerRequest, getHeader, H3Event} from "h3";
 import * as jose from "jose";
 import {client} from "~/posthog";
-import {SignJWT} from "jose";
 
 export const TOKEN_EXPIRATION_HOURS = 24 * 3;
 

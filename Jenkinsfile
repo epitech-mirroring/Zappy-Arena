@@ -6,7 +6,7 @@ pipeline {
         POSTHOG_TOKEN = credentials('posthog_api_key')
         JWT_SECRET = credentials('jwt_secret')
         DATABASE_URL = credentials('database_url')
-        IMAGE_VERSION = '1.00.0'
+        IMAGE_VERSION = '1.00.5'
         IMAGE_NAME_BASE = 'epitech-mirroring/zappy-arena'
     }
     stages {
