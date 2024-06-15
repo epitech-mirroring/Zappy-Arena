@@ -1,8 +1,9 @@
 import {User} from "@prisma/client";
 import {prisma} from "~/database";
 import {EventHandlerRequest, getHeader, H3Event} from "h3";
-import jwt from "jsonwebtoken";
+import * as jose from "jose";
 import {client} from "~/posthog";
+import {SignJWT} from "jose";
 
 export const TOKEN_EXPIRATION_HOURS = 24 * 3;
 
@@ -132,12 +133,27 @@ export const _login = async (token: string): Promise<User | LoginError> => {
         return LoginError.ExpiredToken;
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
+    // Verify the token
+    const secret = new TextEncoder().encode(
+        process.env.JWT_SECRET as string
+    )
+
+    try {
+        const decoded = await jose.jwtVerify(token, secret, {
+            issuer: 'arena',
+            algorithms: ['HS256']
+        });
+
+        if (typeof decoded === 'string') {
             return LoginError.TokenInvalid;
         }
-        return decoded;
-    })
+
+        if (typeof decoded === 'object') {
+            return LoginError.TokenInvalid;
+        }
+    } catch (e) {
+        return LoginError.TokenInvalid;
+    }
 
     // Update the token expiration
     await prisma.token.update({
@@ -162,14 +178,26 @@ export const _login = async (token: string): Promise<User | LoginError> => {
     return user;
 }
 
-export const createTokenForUser = async (userId: string): Promise<string> => {
-    const token = jwt.sign({userId}, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRATION
-    });
+export const createTokenForUser = async (user: User): Promise<string> => {
+    const secret = new TextEncoder().encode(
+        process.env.JWT_SECRET as string
+    )
+
+    const token = await new SignJWT({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        groupId: user.groupId
+    })
+    .setProtectedHeader({alg: 'HS256'})
+    .setIssuedAt()
+    .setIssuer('arena')
+    .setExpirationTime(TOKEN_EXPIRATION_HOURS + 'h')
+    .sign(secret);
 
     await prisma.token.create({
         data: {
-            userId,
+            userId: user.id,
             token,
             expiresAt: new Date(Date.now() + 1000 * 60 * 60 * TOKEN_EXPIRATION_HOURS)
         }

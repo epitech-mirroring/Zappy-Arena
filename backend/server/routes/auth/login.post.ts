@@ -1,7 +1,6 @@
 import {prisma} from "~/database";
 import {readBody, setResponseStatus} from "h3";
-import jwt from "jsonwebtoken";
-import {createTokenForUser, TOKEN_EXPIRATION_HOURS} from "~/composables/users";
+import {createTokenForUser} from "~/composables/users";
 import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
@@ -98,11 +97,7 @@ export default eventHandler(async (event) => {
         };
     }
 
-    const token = jwt.sign({userId: user.id}, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRATION
-    });
-
-    const newToken = await createTokenForUser(user.id);
+    const newToken = await createTokenForUser(user);
 
     client.capture({
         distinctId: user.id,
