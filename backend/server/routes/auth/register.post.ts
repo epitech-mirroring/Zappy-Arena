@@ -133,7 +133,7 @@ export default eventHandler(async (event) => {
     });
 
     // login the user
-    const token = createTokenForUser(newUser.id);
+    const token = await createTokenForUser(newUser);
     setResponseStatus(event, 200);
     return {token};
 });
