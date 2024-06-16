@@ -17,9 +17,10 @@ COPY --from=install-backend /temp/dev/node_modules node_modules
 COPY . .
 # Expose environment variables
 ENV DATABASE_URL=""
-ENV JWT_SECRET=""
 ENV JWT_EXPIRATION="90d"
 ENV POSTHOG_API_KEY=""
+ENV JWT_PUBLIC_KEY=""
+ENV JWT_PRIVATE_KEY=""
 
 RUN bun run build
 
