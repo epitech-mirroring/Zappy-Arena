@@ -18,6 +18,18 @@ const checkEmail = () => {
   isEmailValid.value = emailRegex.test(email.value);
 }
 
+accountStore.$subscribe((mutation, state) => {
+  if (state.loggedIn) {
+    navigateTo('/dashboard');
+  }
+});
+
+onMounted(() => {
+  if (accountStore.loggedIn) {
+    navigateTo('/dashboard');
+  }
+});
+
 const tryRegister = async () => {
   if (email.value === '' || password.value === '' || firstName.value === '' || lastName.value === '') {
     notificationStore.pushNotification({
@@ -57,6 +69,14 @@ const tryRegister = async () => {
       type: 'error',
       message: msg
     });
+  } else {
+    notificationStore.pushNotification({
+      id: 0,
+      duration: 2000,
+      type: 'success',
+      message: 'Successfully registered.'
+    });
+    navigateTo('/dashboard');
   }
 }
 </script>

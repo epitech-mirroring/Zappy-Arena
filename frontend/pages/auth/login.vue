@@ -15,6 +15,18 @@ const checkEmail = () => {
   isEmailValid.value = emailRegex.test(email.value);
 }
 
+accountStore.$subscribe((mutation, state) => {
+  if (state.loggedIn) {
+    navigateTo('/dashboard');
+  }
+});
+
+onMounted(() => {
+  if (accountStore.loggedIn) {
+    navigateTo('/dashboard');
+  }
+});
+
 const tryLogin = async () => {
   if (email.value === '' || password.value === '') {
     notificationStore.pushNotification({
@@ -44,6 +56,14 @@ const tryLogin = async () => {
       type: 'error',
       message: msg
     });
+  } else {
+    notificationStore.pushNotification({
+      id: 0,
+      duration: 2000,
+      type: 'success',
+      message: 'Successfully logged in.'
+    });
+    navigateTo('/dashboard');
   }
 }
 
