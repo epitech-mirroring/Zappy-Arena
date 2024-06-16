@@ -5,11 +5,11 @@ WORKDIR /usr/src/app
 # this will cache them and speed up future builds
 FROM base AS install-backend
 RUN mkdir -p /temp/dev
-COPY package.json package-lock.json /temp/dev/
+COPY package.json /temp/dev/
 RUN cd /temp/dev && npm install --frozen-lockfile
 
 RUN mkdir -p /temp/prod
-COPY package.json package-lock.json /temp/prod/
+COPY package.json /temp/prod/
 RUN cd /temp/prod && npm install --frozen-lockfile
 
 FROM base AS prerelease-backend
