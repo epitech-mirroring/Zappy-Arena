@@ -39,7 +39,8 @@ export const useAccount = defineStore('account', {
                 }
                 if (valid && nuxt.$posthog()) {
                     const posthog = nuxt.$posthog() as unknown as PostHog
-                    console.log('Identifying user with email and id: ', {email: this.user?.email, id: this.user?.id})
+                    this.user = await nuxt.$decodeToken(res.token) as User & JWTPayload
+                    this.loggedIn = true
                     posthog.identify(this.user?.id, {email: this.user?.email, name: this.user?.name})
                 } else {
                     this.token = null
