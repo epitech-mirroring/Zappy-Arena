@@ -20,19 +20,8 @@ model User {
   updatedAt       DateTime          @updatedAt
   groupId         String?
   group           Group?            @relation("GroupUsers", fields: [groupId], references: [id])
-  Token           Token[]
   notifications   Notification[]
   groupInvitation GroupInvitation[]
-}
-
-model Token {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  expiresAt DateTime
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Bot {

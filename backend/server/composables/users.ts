@@ -114,68 +114,49 @@ export const login = async (event: H3Event<EventHandlerRequest>): Promise<User |
 }
 
 export const _login = async (token: string): Promise<User | LoginError> => {
-    const userToken = await prisma.token.findFirst({
-        where: {
-            token
-        }
-    });
-
-    if (!userToken) {
-        return LoginError.TokenInvalid;
-    }
-
-    if (userToken.expiresAt < new Date()) {
-        await prisma.token.delete({
-            where: {
-                token
-            }
-        });
-        return LoginError.ExpiredToken;
-    }
-
-    // Verify the token
     const secret = new TextEncoder().encode(
         process.env.JWT_SECRET as string
-    )
+    );
 
     try {
-        const decoded = await jose.jwtVerify(token, secret, {
-            issuer: 'arena',
-            algorithms: ['HS256']
+        const verifyResult = await jose.jwtVerify(token, secret, {
+            algorithms: ['HS256'],
+            issuer: 'arena'
         });
 
-        if (typeof decoded === 'string') {
+        const decoded = jose.decodeJwt(token);
+        const payload = decoded.payload as {id: string, name: string, email: string, groupId?: string};
+
+        const user = await findUserById(payload.id);
+
+        if (!user) {
+            return LoginError.UserNotFound;
+        }
+
+        if (user.email !== payload.email) {
             return LoginError.TokenInvalid;
         }
 
-        if (typeof decoded === 'object') {
+        if (user.name !== payload.name) {
             return LoginError.TokenInvalid;
         }
+
+        if (user.groupId !== payload.groupId) {
+            return LoginError.TokenInvalid;
+        }
+
+        if (verifyResult.payload.exp < Date.now() / 1000) {
+            return LoginError.ExpiredToken;
+        }
+
+        if (verifyResult.payload.iss !== 'arena') {
+            return LoginError.TokenInvalid;
+        }
+
+        return user;
     } catch (e) {
-        return LoginError.TokenInvalid;
+        return LoginError.ExpiredToken;
     }
-
-    // Update the token expiration
-    await prisma.token.update({
-        where: {
-            token
-        },
-        data: {
-            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * TOKEN_EXPIRATION_HOURS)
-        }
-    });
-
-    const user = await prisma.user.findFirst({
-        where: {
-            id: userToken.userId
-        }
-    });
-
-    if (!user) {
-        return LoginError.UserNotFound;
-    }
-
-    return user;
 }
 
 export const createTokenForUser = async (user: User): Promise<string> => {
@@ -183,25 +164,15 @@ export const createTokenForUser = async (user: User): Promise<string> => {
         process.env.JWT_SECRET as string
     )
 
-    const token = await new jose.SignJWT({
+    return await new jose.SignJWT({
         id: user.id,
         name: user.name,
         email: user.email,
         groupId: user.groupId
     })
-    .setProtectedHeader({alg: 'HS256'})
-    .setIssuedAt()
-    .setIssuer('arena')
-    .setExpirationTime(TOKEN_EXPIRATION_HOURS + 'h')
-    .sign(secret);
-
-    await prisma.token.create({
-        data: {
-            userId: user.id,
-            token,
-            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * TOKEN_EXPIRATION_HOURS)
-        }
-    });
-
-    return token;
+        .setProtectedHeader({alg: 'HS256'})
+        .setIssuedAt()
+        .setIssuer('arena')
+        .setExpirationTime(TOKEN_EXPIRATION_HOURS + 'h')
+        .sign(secret);
 }

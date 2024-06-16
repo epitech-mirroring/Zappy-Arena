@@ -47,13 +47,42 @@ export const useAccount = defineStore('account', {
             this.loggedIn = false
             const nuxt = useNuxtApp();
             // If $posthog is void, then the plugin is not installed or not enabled
-            if (nuxt.$posthog) {
-                const posthog = nuxt.$posthog as unknown as PostHog
+            if (nuxt.$posthog()) {
+                const posthog = nuxt.$posthog() as unknown as PostHog
                 posthog.reset()
             }
         },
-        register(email: string, password: string) {
-
+        async register(email: string, password: string, name: string): Promise<string | null> {
+            const nuxt = useNuxtApp();
+            let uniqueId = 'anonymous'
+            if (nuxt.$posthog()) {
+                const posthog = nuxt.$posthog() as unknown as PostHog
+                uniqueId = posthog.get_distinct_id()
+            }
+            const hashedPassword = await hashPassword(password)
+            // Call the backend API to register
+            // Save the user and token in the store
+            return fetch('https://api.arena.n-king.com/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Id': uniqueId
+                },
+                body: JSON.stringify({email, password: hashedPassword, name})
+            }).then(res => res.json()).then(res => {
+                if (res.error) {
+                    return res.message
+                } else {
+                    this.token = res.token
+                    return this.verifyToken().then(valid => {
+                        if (valid && nuxt.$posthog()) {
+                            const posthog = nuxt.$posthog() as unknown as PostHog
+                            posthog.identify(this.user?.id)
+                        }
+                        return valid ? null : 'Invalid token'
+                    })
+                }
+            })
         },
         verifyToken(): Promise<boolean> {
             // Use jwt to verify the token and get the user
