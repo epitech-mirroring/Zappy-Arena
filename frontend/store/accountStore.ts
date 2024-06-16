@@ -13,14 +13,18 @@ export const useAccount = defineStore('account', {
         async login(email: string, password: string): Promise<string | null> {
             const hashedPassword = await hashPassword(password)
             const nuxt = useNuxtApp();
-            const posthog = nuxt.$posthog as unknown as PostHog
+            let uniqueId = 'anonymous'
+            if (nuxt.$posthog()) {
+                const posthog = nuxt.$posthog() as unknown as PostHog
+                uniqueId = posthog.get_distinct_id()
+            }
             // Call the backend API to login
             // Save the user and token in the store
             const res = await fetch('https://api.arena.n-king.com/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-User-Id': posthog.get_distinct_id()
+                    'X-User-Id': uniqueId
                 },
                 body: JSON.stringify({email, password: hashedPassword})
             }).then(res => res.json())
@@ -30,8 +34,8 @@ export const useAccount = defineStore('account', {
             } else {
                 this.token = res.token
                 const valid: boolean = await this.verifyToken();
-                if (valid && nuxt.$posthog) {
-                    const posthog = nuxt.$posthog as unknown as PostHog
+                if (valid && nuxt.$posthog()) {
+                    const posthog = nuxt.$posthog() as unknown as PostHog
                     posthog.identify(this.user?.id)
                 }
                 return valid ? null : 'Invalid token'
