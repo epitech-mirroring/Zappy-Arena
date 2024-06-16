@@ -1,16 +1,16 @@
-FROM oven/bun:1 as base
+FROM node:16-alpine AS base
 WORKDIR /usr/src/app
 
 # install dependencies into temp directory
 # this will cache them and speed up future builds
 FROM base AS install-frontend
 RUN mkdir -p /temp/dev
-COPY package.json bun.lockb /temp/dev/
-RUN cd /temp/dev && bun install --frozen-lockfile
+COPY package.json package-lock.json /temp/dev/
+RUN cd /temp/dev && npm install --frozen-lockfile
 
 RUN mkdir -p /temp/prod
-COPY package.json bun.lockb /temp/prod/
-RUN cd /temp/prod && bun install --frozen-lockfile --production
+COPY package.json package-lock.json /temp/prod/
+RUN cd /temp/prod && npm install --frozen-lockfile --production
 
 FROM base AS prerelease-frontend
 COPY --from=install-frontend /temp/dev/node_modules node_modules
@@ -23,6 +23,5 @@ COPY --from=install-frontend /temp/prod/node_modules node_modules
 COPY --from=prerelease-frontend /usr/src/app/.output .output
 COPY --from=prerelease-frontend /usr/src/app/package.json .
 
-USER bun
 EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", ".output/server/index.mjs" ]
+ENTRYPOINT [ "node", ".output/server/index.mjs" ]
