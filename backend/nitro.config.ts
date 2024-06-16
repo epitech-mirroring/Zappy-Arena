@@ -4,4 +4,7 @@ export default defineNitroConfig({
   experimental: {
     websocket: true
   },
+  externals: {
+    inline: ['jose']
+  }
 });
