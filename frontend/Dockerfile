@@ -16,7 +16,7 @@ FROM base AS prerelease-frontend
 COPY --from=install-frontend /temp/dev/node_modules node_modules
 COPY . .
 
-RUN bun run build
+RUN npm run build
 
 FROM base AS release-frontend
 COPY --from=install-frontend /temp/prod/node_modules node_modules

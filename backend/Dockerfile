@@ -22,7 +22,7 @@ ENV POSTHOG_API_KEY=""
 ENV JWT_PUBLIC_KEY=""
 ENV JWT_PRIVATE_KEY=""
 
-RUN bun run build
+RUN npm run build
 
 FROM base AS release-backend
 COPY --from=install-backend /temp/prod/node_modules node_modules
