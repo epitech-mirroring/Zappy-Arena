@@ -39,7 +39,8 @@ export const useAccount = defineStore('account', {
                 }
                 if (valid && nuxt.$posthog()) {
                     const posthog = nuxt.$posthog() as unknown as PostHog
-                    posthog.identify(this.user?.id)
+                    console.log('Identifying user with email and id: ', {email: this.user?.email, id: this.user?.id})
+                    posthog.identify(this.user?.id, {email: this.user?.email, name: this.user?.name})
                 } else {
                     this.token = null
                     this.loggedIn = false
