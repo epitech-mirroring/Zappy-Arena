@@ -1,7 +1,6 @@
-import { defineStore } from "pinia";
-import {hashPassword} from "~/composables/Accounts";
-import * as jose from 'jose';
+import {defineStore} from "pinia";
 import type {PostHog} from "posthog-js";
+import type {JWTPayload} from "jose";
 
 export const useAccount = defineStore('account', {
     state: () => ({
@@ -11,8 +10,8 @@ export const useAccount = defineStore('account', {
     }),
     actions: {
         async login(email: string, password: string): Promise<string | null> {
-            const hashedPassword = await hashPassword(password)
             const nuxt = useNuxtApp();
+            const hashedPassword = await nuxt.$hashPassword(password)
             let uniqueId = 'anonymous'
             if (nuxt.$posthog()) {
                 const posthog = nuxt.$posthog() as unknown as PostHog
@@ -20,7 +19,7 @@ export const useAccount = defineStore('account', {
             }
             // Call the backend API to login
             // Save the user and token in the store
-            const res = await fetch('https://api.arena.n-king.com/auth/login', {
+            const res = await fetch(nuxt.$config.public.apiHost + '/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -33,21 +32,30 @@ export const useAccount = defineStore('account', {
                 return res.message;
             } else {
                 this.token = res.token
-                const valid: boolean = await this.verifyToken();
+                const valid: boolean = await nuxt.$verifyToken(res.token)
+                if (this.loggedIn && nuxt.$posthog()) {
+                    const posthog = nuxt.$posthog() as unknown as PostHog
+                    posthog.reset()
+                }
                 if (valid && nuxt.$posthog()) {
                     const posthog = nuxt.$posthog() as unknown as PostHog
                     posthog.identify(this.user?.id)
+                } else {
+                    this.token = null
+                    this.loggedIn = false
+                    this.user = null
                 }
                 return valid ? null : 'Invalid token'
             }
         },
         logout() {
+            const wasLoggedIn = this.loggedIn
             this.user = null
             this.token = null
             this.loggedIn = false
             const nuxt = useNuxtApp();
             // If $posthog is void, then the plugin is not installed or not enabled
-            if (nuxt.$posthog()) {
+            if (nuxt.$posthog() && wasLoggedIn) {
                 const posthog = nuxt.$posthog() as unknown as PostHog
                 posthog.reset()
             }
@@ -59,10 +67,10 @@ export const useAccount = defineStore('account', {
                 const posthog = nuxt.$posthog() as unknown as PostHog
                 uniqueId = posthog.get_distinct_id()
             }
-            const hashedPassword = await hashPassword(password)
+            const hashedPassword = await nuxt.$hashPassword(password)
             // Call the backend API to register
             // Save the user and token in the store
-            return fetch('https://api.arena.n-king.com/auth/register', {
+            return fetch(nuxt.$config.public.apiHost + '/auth/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -74,38 +82,27 @@ export const useAccount = defineStore('account', {
                     return res.message
                 } else {
                     this.token = res.token
-                    return this.verifyToken().then(valid => {
-                        if (valid && nuxt.$posthog()) {
-                            const posthog = nuxt.$posthog() as unknown as PostHog
-                            posthog.identify(this.user?.id)
-                        }
-                        return valid ? null : 'Invalid token'
-                    })
-                }
-            })
-        },
-        verifyToken(): Promise<boolean> {
-            // Use jwt to verify the token and get the user
-            // Save the user in the store
-            return new Promise((resolve, reject) => {
-                if (!this.token) {
-                    resolve(false)
-                } else {
-                    const secret = new TextEncoder().encode(
-                        process.env.JWT_SECRET as string
-                    )
-
-                    jose.jwtVerify(this.token as string, secret, {
-                        issuer: 'arena',
-                        audience: 'arena'
-                    }).then((claims) => {
-                        const decoded = jose.decodeJwt(this.token as string)
-                        this.user = decoded.payload as User
-                        this.loggedIn = true
-                    }).catch((err) => {
-                        this.logout()
-                        resolve(false)
-                    })
+                    if (this.token) {
+                        return nuxt.$verifyToken(this.token).then(async valid => {
+                            if (this.loggedIn && nuxt.$posthog()) {
+                                const posthog = nuxt.$posthog() as unknown as PostHog
+                                posthog.reset()
+                            }
+                            if (valid && nuxt.$posthog()) {
+                                const posthog = nuxt.$posthog() as unknown as PostHog
+                                posthog.identify(this.user?.id)
+                                this.user = await nuxt.$decodeToken(res.token) as User & JWTPayload
+                                this.loggedIn = true
+                            } else {
+                                this.token = null
+                                this.loggedIn = false
+                                this.user = null
+                            }
+                            return valid ? null : 'Invalid token'
+                        })
+                    } else {
+                        return 'Invalid token'
+                    }
                 }
             })
         }

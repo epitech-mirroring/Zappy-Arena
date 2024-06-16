@@ -114,17 +114,16 @@ export const login = async (event: H3Event<EventHandlerRequest>): Promise<User |
 }
 
 export const _login = async (token: string): Promise<User | LoginError> => {
-    const secret = new TextEncoder().encode(
-        process.env.JWT_SECRET as string
-    );
+    const publicKey = process.env.JWT_PUBLIC_KEY as string;
+    const secret = await jose.importSPKI(publicKey, 'ES256');
 
     try {
         const verifyResult = await jose.jwtVerify(token, secret, {
-            algorithms: ['HS256'],
+            algorithms: ['ES256'],
             issuer: 'arena'
         });
 
-        const decoded = jose.decodeJwt(token);
+        const decoded = await jose.jwtDecrypt(token, secret)
         const payload = decoded.payload as {id: string, name: string, email: string, groupId?: string};
 
         const user = await findUserById(payload.id);
@@ -160,9 +159,8 @@ export const _login = async (token: string): Promise<User | LoginError> => {
 }
 
 export const createTokenForUser = async (user: User): Promise<string> => {
-    const secret = new TextEncoder().encode(
-        process.env.JWT_SECRET as string
-    )
+    const privateKey = process.env.JWT_PRIVATE_KEY as string;
+    const secret = await jose.importPKCS8(privateKey, 'ES256');
 
     return await new jose.SignJWT({
         id: user.id,
@@ -170,7 +168,7 @@ export const createTokenForUser = async (user: User): Promise<string> => {
         email: user.email,
         groupId: user.groupId
     })
-        .setProtectedHeader({alg: 'HS256'})
+        .setProtectedHeader({alg: 'ES256'})
         .setIssuedAt()
         .setIssuer('arena')
         .setExpirationTime(TOKEN_EXPIRATION_HOURS + 'h')

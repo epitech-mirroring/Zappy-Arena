@@ -14,7 +14,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       posthogPublicKey: 'phc_E1SiWhIRxWsm2f6ko8ZhXFbiyZ72XZkLZjbchEVELYw',
-      posthogHost: "https://us.i.posthog.com"
+      posthogHost: "https://us.i.posthog.com",
+      apiHost: process.env.NODE_ENV === 'production' ? 'https://api.arena.n-king.com' : 'http://localhost:3001'
     }
   },
   postcss: {
