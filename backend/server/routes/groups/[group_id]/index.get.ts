@@ -1,10 +1,11 @@
 import {prisma} from "~/database";
-import {getRouterParam, setResponseStatus} from "h3";
+import {getHeader, getRouterParam, setResponseStatus} from "h3";
 import {Bot, Group, League, User} from "@prisma/client";
 import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const groupId = getRouterParam(event, 'group_id');
+    const userId = getHeader(event, 'X-User-Id');
     if (!groupId) {
         setResponseStatus(event, 400);
         return {
@@ -14,7 +15,7 @@ export default eventHandler(async (event) => {
     }
 
     client.capture({
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         event: 'group_info',
         properties: {
             groupId
@@ -29,7 +30,7 @@ export default eventHandler(async (event) => {
 
     if (!g) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'group_info_error',
             properties: {
                 error: 'Group not found',
@@ -86,7 +87,7 @@ export default eventHandler(async (event) => {
     });
 
     client.capture({
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         event: 'group_info_success',
         properties: {
             groupId

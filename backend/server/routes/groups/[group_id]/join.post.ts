@@ -1,4 +1,9 @@
-import {getResponseStatus, getRouterParam, setResponseStatus} from "h3";
+import {
+    getHeader,
+    getResponseStatus,
+    getRouterParam,
+    setResponseStatus
+} from "h3";
 import {Group, User} from "@prisma/client";
 import {prisma} from "~/database";
 import {ErrorResponse, login} from "~/composables/users";
@@ -7,6 +12,7 @@ import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const groupId = getRouterParam(event, 'group_id');
+    const userId = getHeader(event, 'X-User-Id');
     if (!groupId) {
         setResponseStatus(event, 400);
         return {
@@ -16,7 +22,7 @@ export default eventHandler(async (event) => {
     }
 
     client.capture({
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         event: 'group_join',
         properties: {
             groupId
@@ -31,7 +37,7 @@ export default eventHandler(async (event) => {
 
     if (!g) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'group_join_error',
             properties: {
                 error: 'Group not found',

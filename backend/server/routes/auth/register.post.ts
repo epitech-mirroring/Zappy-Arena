@@ -7,9 +7,10 @@ export default eventHandler(async (event) => {
    // Parse the body from the event
     const body = await readBody(event);
     const authorization = getHeader(event, 'Authorization');
+    const userId = getHeader(event, 'X-User-Id');
 
     client.capture({
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         event: 'register',
         properties: {
             body
@@ -19,7 +20,7 @@ export default eventHandler(async (event) => {
     // if authorization header is present, return 401
     if (authorization) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'register_error',
             properties: {
                 error: 'Unauthorized',
@@ -36,7 +37,7 @@ export default eventHandler(async (event) => {
     // if body is empty, return 400
     if (!body) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'register_error',
             properties: {
                 error: 'Invalid body',
@@ -53,7 +54,7 @@ export default eventHandler(async (event) => {
     // if email is not present in the body, return 400
     if (!body.email) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'register_error',
             properties: {
                 error: 'Invalid body',
@@ -70,7 +71,7 @@ export default eventHandler(async (event) => {
     // if password is not present in the body, return 400
     if (!body.password) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'register_error',
             properties: {
                 error: 'Invalid body',
@@ -101,7 +102,7 @@ export default eventHandler(async (event) => {
 
     if (user) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'register_error',
             properties: {
                 error: 'User already exists',

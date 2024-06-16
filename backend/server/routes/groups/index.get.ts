@@ -1,10 +1,11 @@
 import {prisma} from "~/database";
-import {setResponseStatus} from "h3";
+import {getHeader, setResponseStatus} from "h3";
 import {Group, User} from "@prisma/client";
 import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const groups: (Group & {members: User[] })[] = await prisma.group.findMany() as any;
+    const userId = getHeader(event, 'X-User-Id');
 
     for (let i = 0; i < groups.length; i++) {
         const group = groups[i];
@@ -25,7 +26,7 @@ export default eventHandler(async (event) => {
     }
 
     client.capture({
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         event: 'group_list'
     });
 

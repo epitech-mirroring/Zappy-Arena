@@ -27,10 +27,11 @@ export const findUserById = async (userId: string): Promise<User | null> => {
 
 export const login = async (event: H3Event<EventHandlerRequest>): Promise<User | ErrorResponse> => {
     let authorization = getHeader(event, 'Authorization');
+    const userId = getHeader(event, 'X-User-Id');
 
     client.capture({
         event: 'login_attempt',
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         properties: {
             authorization
         }
@@ -39,7 +40,7 @@ export const login = async (event: H3Event<EventHandlerRequest>): Promise<User |
     if (!authorization) {
         client.capture({
             event: 'login_error',
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             properties: {
                 error: 'No authorization header provided'
             }
@@ -54,7 +55,7 @@ export const login = async (event: H3Event<EventHandlerRequest>): Promise<User |
     if (tmp.length !== 2 || tmp[0] !== 'Bearer') {
         client.capture({
             event: 'login_error',
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             properties: {
                 error: 'Invalid authorization header'
             }
@@ -71,7 +72,7 @@ export const login = async (event: H3Event<EventHandlerRequest>): Promise<User |
     if (!token) {
         client.capture({
             event: 'login_error',
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             properties: {
                 error: 'No authorization header provided'
             }
@@ -88,7 +89,7 @@ export const login = async (event: H3Event<EventHandlerRequest>): Promise<User |
     if (typeof loginResult === 'string') {
         client.capture({
             event: 'login_error',
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             properties: {
                 error: 'Invalid token',
                 reason: loginResult

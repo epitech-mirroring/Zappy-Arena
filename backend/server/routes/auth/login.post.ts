@@ -1,13 +1,14 @@
 import {prisma} from "~/database";
-import {readBody, setResponseStatus} from "h3";
+import {getHeader, readBody, setResponseStatus} from "h3";
 import {createTokenForUser} from "~/composables/users";
 import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const body = await readBody(event);
+    const userId = getHeader(event, 'X-User-Id');
 
     client.capture({
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         event: 'login',
         properties: {
             body: body
@@ -15,7 +16,7 @@ export default eventHandler(async (event) => {
     });
     if (!body) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'login_error',
             properties: {
                 error: 'Invalid body'
@@ -30,7 +31,7 @@ export default eventHandler(async (event) => {
 
     if (!body.email) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'login_error',
             properties: {
                 error: 'Invalid body',
@@ -46,7 +47,7 @@ export default eventHandler(async (event) => {
 
     if (!body.password) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'login_error',
             properties: {
                 error: 'Invalid body',
@@ -68,7 +69,7 @@ export default eventHandler(async (event) => {
 
     if (!user) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'login_error',
             properties: {
                 error: 'User not found',
@@ -84,7 +85,7 @@ export default eventHandler(async (event) => {
 
     if (user.password !== body.password) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'login_error',
             properties: {
                 error: 'Invalid password'

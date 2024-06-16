@@ -1,6 +1,6 @@
 import {BotMatch, League, Match} from "@prisma/client";
 import {prisma} from "~/database";
-import {getRouterParam, setResponseStatus} from "h3";
+import {getHeader, getRouterParam, setResponseStatus} from "h3";
 import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
@@ -8,6 +8,7 @@ export default eventHandler(async (event) => {
     const leagueIdOrName = getRouterParam(event, 'league_id');
     const matchId = getRouterParam(event, 'match_id');
     const isId = leagueIdOrName.startsWith('c');
+    const userId = getHeader(event, 'X-User-Id');
 
     const league: League = await prisma.league.findFirst({
         where: {
@@ -16,7 +17,7 @@ export default eventHandler(async (event) => {
     }) as any;
 
     client.capture({
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         event: 'match_leaderboard',
         properties: {
             league_id: league.id,
@@ -26,7 +27,7 @@ export default eventHandler(async (event) => {
 
     if (!league) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'match_leaderboard_error',
             properties: {
                 error: 'League not found',
@@ -49,7 +50,7 @@ export default eventHandler(async (event) => {
 
     if (!match) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'match_leaderboard_error',
             properties: {
                 error: 'Match not found',
@@ -81,7 +82,7 @@ export default eventHandler(async (event) => {
     match.bots = bots;
 
     client.capture({
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         event: 'match_leaderboard_success',
         properties: {
             league_id: league.id,

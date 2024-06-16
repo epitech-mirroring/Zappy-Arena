@@ -1,12 +1,14 @@
 import {prisma} from "~/database";
-import {setResponseStatus} from "h3";
+import {getHeader, setResponseStatus} from "h3";
 import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const leagues = await prisma.league.findMany();
+    // Check if the user gave us a unique identifier
+    const userId = getHeader(event, 'X-User-Id');
 
     client.capture({
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         event: 'league_list'
     })
 

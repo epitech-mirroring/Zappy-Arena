@@ -4,9 +4,10 @@ import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const auth = getHeader(event, 'Authorization');
+    const userId = getHeader(event, 'X-User-Id');
 
     client.capture({
-        distinctId: 'anonymous',
+        distinctId: userId || 'anonymous',
         event: 'logout',
         properties: {
             auth
@@ -14,7 +15,7 @@ export default eventHandler(async (event) => {
     });
     if (!auth) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'logout_error',
             properties: {
                 error: 'No authorization header provided'
@@ -36,7 +37,7 @@ export default eventHandler(async (event) => {
 
     if (!userToken) {
         client.capture({
-            distinctId: 'anonymous',
+            distinctId: userId || 'anonymous',
             event: 'logout_error',
             properties: {
                 error: 'Invalid token'
