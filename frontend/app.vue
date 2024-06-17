@@ -1,4 +1,5 @@
 <template>
+  <NotificationProvider />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
@@ -91,3 +92,6 @@ select:-webkit-autofill:focus {
   color: white;
 }
 </style>
+<script setup lang="ts">
+import NotificationProvider from "~/components/NotificationProvider.vue";
+</script>
