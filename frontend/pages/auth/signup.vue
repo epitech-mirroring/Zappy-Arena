@@ -1,6 +1,5 @@
 <script setup lang="ts">
 
-import NotificationProvider from "~/components/NotificationProvider.vue";
 import {useNotificationStore} from "~/store/notificationStore";
 import {useAccount} from "~/store/accountStore";
 
@@ -13,6 +12,7 @@ const emailRegex = new RegExp('^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$'
 const isEmailValid = ref(false);
 const notificationStore = useNotificationStore();
 const accountStore = useAccount();
+const redirect: string = useRoute().query.redirect as string || '/dashboard';
 
 const checkEmail = () => {
   isEmailValid.value = emailRegex.test(email.value);
@@ -20,13 +20,13 @@ const checkEmail = () => {
 
 accountStore.$subscribe((mutation, state) => {
   if (state.loggedIn) {
-    navigateTo('/dashboard');
+    navigateTo(redirect);
   }
 });
 
 onMounted(() => {
   if (accountStore.loggedIn) {
-    navigateTo('/dashboard');
+    navigateTo(redirect);
   }
 });
 
@@ -76,13 +76,12 @@ const tryRegister = async () => {
       type: 'success',
       message: 'Successfully registered.'
     });
-    navigateTo('/dashboard');
+    navigateTo(redirect);
   }
 }
 </script>
 
 <template>
-  <NotificationProvider />
   <main id="body">
     <img src="~/assets/auth-bg.png" alt="" />
     <div id="login">
