@@ -3,7 +3,7 @@
 
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["debian-openssl-1.1.x", "linux-musl-openssl-3.0.x"]
+  binaryTargets = ["debian-openssl-1.1.x", "linux-musl-openssl-3.0.x", "darwin-arm64"]
 }
 
 datasource db {
@@ -22,6 +22,7 @@ model User {
   group           Group?            @relation("GroupUsers", fields: [groupId], references: [id])
   notifications   Notification[]
   groupInvitation GroupInvitation[]
+  refreshToken    RefreshToken[]
 }
 
 model Bot {
@@ -92,6 +93,15 @@ model GroupInvitation {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

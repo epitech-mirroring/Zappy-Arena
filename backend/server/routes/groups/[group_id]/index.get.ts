@@ -5,7 +5,7 @@ import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const groupId = getRouterParam(event, 'group_id');
-    const userId = getHeader(event, 'X-User-Id');
+    const userId = event.context.uniqueId;
     if (!groupId) {
         setResponseStatus(event, 400);
         return {

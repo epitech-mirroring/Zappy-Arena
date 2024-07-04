@@ -6,13 +6,12 @@ import {
 } from "h3";
 import {Group, User} from "@prisma/client";
 import {prisma} from "~/database";
-import {ErrorResponse, login} from "~/composables/users";
 import {joinGroup} from "~/composables/groups";
 import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const groupId = getRouterParam(event, 'group_id');
-    const userId = getHeader(event, 'X-User-Id');
+    const userId = event.context.uniqueId;
     if (!groupId) {
         setResponseStatus(event, 400);
         return {
@@ -50,13 +49,7 @@ export default eventHandler(async (event) => {
             message: `Group with id ${groupId} not found`
         };
     }
-
-
-    const loginResult: User | ErrorResponse = await login(event);
-    if (getResponseStatus(event) !== 200) {
-        return loginResult;
-    }
-    const user = loginResult as User;
+    const user = event.context.user as User;
 
     if (!await joinGroup(user, g)) {
         client.capture({

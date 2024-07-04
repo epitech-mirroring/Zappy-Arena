@@ -20,9 +20,15 @@ export default defineNuxtConfig({
   },
   postcss: {
     plugins: {
+      'postcss-for': {},
+      'tailwindcss/nesting': {},
       tailwindcss: {},
       autoprefixer: {},
+      'postcss-simple-vars': {},
     },
   },
-  modules: ['@pinia/nuxt'],
+  modules: [
+      '@pinia/nuxt',
+      '@pinia-plugin-persistedstate/nuxt',
+  ],
 })

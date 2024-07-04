@@ -5,7 +5,7 @@ import {client} from "~/posthog";
 export default eventHandler(async (event) => {
     const leagues = await prisma.league.findMany();
     // Check if the user gave us a unique identifier
-    const userId = getHeader(event, 'X-User-Id');
+    const userId = event.context.uniqueId;
 
     client.capture({
         distinctId: userId || 'anonymous',

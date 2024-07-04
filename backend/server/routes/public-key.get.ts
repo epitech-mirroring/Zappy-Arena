@@ -2,7 +2,7 @@ import {getHeader, setResponseStatus} from "h3";
 import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
-    const userId = getHeader(event, 'X-User-Id');
+    const userId = event.context.uniqueId;
 
     client.capture({
         distinctId: userId || 'anonymous',

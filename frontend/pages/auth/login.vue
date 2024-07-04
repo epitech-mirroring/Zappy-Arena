@@ -17,13 +17,24 @@ const checkEmail = () => {
 
 accountStore.$subscribe((mutation, state) => {
   if (state.loggedIn) {
-    navigateTo(redirect);
+    successLogin();
   }
 });
 
+const successLogin = async () => {
+  notificationStore.subscribeToNotifications(await accountStore.getSLT());
+  notificationStore.pushNotification({
+    id: 0,
+    duration: 2000,
+    type: 'success',
+    message: 'Successfully logged in.'
+  });
+  navigateTo(redirect);
+}
+
 onMounted(() => {
   if (accountStore.loggedIn) {
-    navigateTo(redirect);
+    successLogin();
   }
 });
 
@@ -57,13 +68,7 @@ const tryLogin = async () => {
       message: msg
     });
   } else {
-    notificationStore.pushNotification({
-      id: 0,
-      duration: 2000,
-      type: 'success',
-      message: 'Successfully logged in.'
-    });
-    navigateTo(redirect);
+    successLogin();
   }
 }
 

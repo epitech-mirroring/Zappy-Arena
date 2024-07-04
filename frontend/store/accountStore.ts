@@ -31,23 +31,47 @@ export const useAccount = defineStore('account', {
             if (res.error) {
                 return res.message;
             } else {
-                this.token = res.token
-                const valid: boolean = await nuxt.$verifyToken(res.token)
-                if (this.loggedIn && nuxt.$posthog()) {
+                return this.loginWithToken(res.token)
+            }
+        },
+        async loginWithToken(_token: string): Promise<string | null> {
+            this.token = _token
+            const nuxt = useNuxtApp();
+            const valid: boolean = await nuxt.$verifyToken(this.token)
+            if (this.loggedIn && nuxt.$posthog()) {
+                const posthog = nuxt.$posthog() as unknown as PostHog
+                posthog.reset()
+            }
+            if (valid && nuxt.$posthog()) {
+                const posthog = nuxt.$posthog() as unknown as PostHog
+                this.user = await nuxt.$decodeToken(this.token) as User & JWTPayload
+                this.loggedIn = true
+                posthog.identify(this.user?.id, {
+                    email: this.user?.email,
+                    name: this.user?.name
+                })
+
+                // Create or update local storage for persisting login
+                const storage = window.localStorage
+                storage.setItem('token', this.token!)
+            } else {
+                this.token = null
+                this.loggedIn = false
+                this.user = null
+                if (nuxt.$posthog()) {
                     const posthog = nuxt.$posthog() as unknown as PostHog
                     posthog.reset()
                 }
-                if (valid && nuxt.$posthog()) {
-                    const posthog = nuxt.$posthog() as unknown as PostHog
-                    this.user = await nuxt.$decodeToken(res.token) as User & JWTPayload
-                    this.loggedIn = true
-                    posthog.identify(this.user?.id, {email: this.user?.email, name: this.user?.name})
-                } else {
-                    this.token = null
-                    this.loggedIn = false
-                    this.user = null
-                }
-                return valid ? null : 'Invalid token'
+            }
+            return valid ? null : 'Invalid token'
+        },
+        checkAuth(): Promise<string | null> {
+            const nuxt = useNuxtApp();
+            const token = window.localStorage.getItem('token')
+            if (token) {
+                return this.loginWithToken(token)
+            } else {
+                return Promise.resolve('No token found')
             }
         },
         logout() {
@@ -83,29 +107,26 @@ export const useAccount = defineStore('account', {
                 if (res.error) {
                     return res.message
                 } else {
-                    this.token = res.token
-                    if (this.token) {
-                        return nuxt.$verifyToken(this.token).then(async valid => {
-                            if (this.loggedIn && nuxt.$posthog()) {
-                                const posthog = nuxt.$posthog() as unknown as PostHog
-                                posthog.reset()
-                            }
-                            if (valid && nuxt.$posthog()) {
-                                const posthog = nuxt.$posthog() as unknown as PostHog
-                                posthog.identify(this.user?.id)
-                                this.user = await nuxt.$decodeToken(res.token) as User & JWTPayload
-                                this.loggedIn = true
-                            } else {
-                                this.token = null
-                                this.loggedIn = false
-                                this.user = null
-                            }
-                            return valid ? null : 'Invalid token'
-                        })
-                    } else {
-                        return 'Invalid token'
-                    }
+                    return this.loginWithToken(res.token)
                 }
+            })
+        },
+        getSLT(): Promise<string> {
+            const nuxt = useNuxtApp();
+            let uniqueId = 'anonymous'
+            if (nuxt.$posthog()) {
+                const posthog = nuxt.$posthog() as unknown as PostHog
+                uniqueId = posthog.get_distinct_id()
+            }
+            return fetch(nuxt.$config.public.apiHost + '/auth/slt', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Id': uniqueId,
+                    'Authorization': 'Bearer ' + this.token
+                }
+            }).then(res => res.json()).then(res => {
+                return res.token
             })
         }
     },

@@ -1,5 +1,9 @@
 <script setup lang="ts">
 
+import {useAccount} from "~/store/accountStore";
+
+const accountStore = useAccount();
+
 const scrollTo = (id: string) => {
   const element = document.getElementById(id);
   if (element) {
@@ -44,11 +48,15 @@ const openEpitech = () => {
           </div>
         </div>
         <div id="auth">
-          <div id="login" class="auth-item" @click="navigateTo('/auth/login')">
+          <div v-if="!accountStore.isLoggedIn" id="login" class="auth-item" @click="navigateTo('/auth/login')">
             <span>Login</span>
           </div>
-          <div id="signup" class="auth-item" @click="navigateTo('/auth/signup')">
+          <div v-if="!accountStore.isLoggedIn" id="signup" class="auth-item" @click="navigateTo('/auth/signup')">
             <span>Sign up</span>
+          </div>
+          <div v-else id="dashboard" class="auth-item" @click="navigateTo('/dashboard')">
+            <span>Dashboard</span>
+            <img id='avatar' :src="'https://api.dicebear.com/9.x/big-smile/svg?seed=' + accountStore.getUser?.id + '&flip=true&radius=50&backgroundType=solid,gradientLinear&backgroundRotation=0,360,10,20,30,40,70,60,50,-360,-350,-340,-330,-320,-310,-300,-290,-280,-270,-250,-260,-230,-240,-220,-210,-200,-190,-180,-170,-160,-150,-140,-130,-120,-100,-110,-60,-70,-80,-90,-40,-50,-30,-10,-20,80,100,90,150,130,120,110,140,160,170,180,190,200,210,220,230,250,240,350,340,330,320,310,300,290,280,260,270&translateY=5&skinColor=a47539,c99c62,e2ba87,efcc9f,f5d7b1,ffe4c0&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4'" alt="">
           </div>
         </div>
       </div>
@@ -129,6 +137,7 @@ const openEpitech = () => {
 
     #header-logo {
       @apply flex flex-row items-center;
+      @apply select-none;
 
       img {
         width: 59px;
@@ -182,6 +191,18 @@ const openEpitech = () => {
             @apply border border-white;
             @apply rounded-lg;
             @apply px-4;
+          }
+
+          &#dashboard {
+            @apply flex flex-row items-center justify-end;
+            @apply space-x-2;
+            @apply border border-white;
+            @apply rounded-full;
+            @apply py-1 pr-2 pl-4;
+
+            #avatar {
+              @apply w-8 h-8;
+            }
           }
         }
       }

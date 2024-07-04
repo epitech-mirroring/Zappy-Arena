@@ -1,6 +1,6 @@
 import { defineNuxtPlugin } from '#app'
 import * as jose from 'jose'
-import {generateKeyPair} from "node:crypto";
+
 export default defineNuxtPlugin(async nuxtApp => {
     // Get the public key from the backend
     const publicKey: string = await fetch(nuxtApp.$config.public.apiHost + '/public-key',

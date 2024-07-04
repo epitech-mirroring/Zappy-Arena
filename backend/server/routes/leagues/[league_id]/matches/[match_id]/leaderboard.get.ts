@@ -8,7 +8,7 @@ export default eventHandler(async (event) => {
     const leagueIdOrName = getRouterParam(event, 'league_id');
     const matchId = getRouterParam(event, 'match_id');
     const isId = leagueIdOrName.startsWith('c');
-    const userId = getHeader(event, 'X-User-Id');
+    const userId = event.context.uniqueId;
 
     const league: League = await prisma.league.findFirst({
         where: {

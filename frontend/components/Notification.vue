@@ -1,44 +1,20 @@
 <script lang="ts" setup>
-  import {useNotificationStore} from "~/store/notificationStore";
+  import {
+    notificationTheme,
+    useNotificationStore
+  } from "~/store/notificationStore";
   import type {Notification} from "~/store/notificationStore";
 
   const props = defineProps<{
     notification: Notification;
   }>();
   const store = useNotificationStore();
-
-  const notificationThemes = {
-    "success": {
-      icon: "check-circle",
-      background: "bg-green-100",
-      border: "border-green-300",
-      text: "text-green-700"
-    },
-    "error": {
-      icon: "exclamation-circle",
-      background: "bg-red-100",
-      border: "border-red-300",
-      text: "text-red-700"
-    },
-    "info": {
-      icon: "info-circle",
-      background: "bg-blue-100",
-      border: "border-blue-300",
-      text: "text-blue-700"
-    },
-    "warning": {
-      icon: "exclamation-triangle",
-      background: "bg-yellow-100",
-      border: "border-yellow-300",
-      text: "text-yellow-700"
-    }
-  }
 </script>
 
 <template>
-  <div class="notification" :class="[notificationThemes[notification.type].background, notificationThemes[notification.type].text, notificationThemes[notification.type].border]">
+  <div class="notification" :class="[notificationTheme[notification.type].background, notificationTheme[notification.type].text, notificationTheme[notification.type].border]">
     <div class="notification-left">
-      <i :class="'fas fa-' + notificationThemes[notification.type].icon" />
+      <i :class="'fas fa-' + notificationTheme[notification.type].icon" />
     </div>
     <div class="notification-center">
       <span class="notification-message">{{ props.notification.message }}</span>
@@ -65,7 +41,7 @@
     }
 
     .notification-center {
-      @apply flex flex-row items-center justify-center flex-nowrap whitespace-nowrap overflow-hidden;
+      @apply flex flex-row items-center justify-center flex-nowrap whitespace-nowrap overflow-x-hidden overflow-y-visible;
       @apply w-full h-full;
       @apply mr-4;
     }

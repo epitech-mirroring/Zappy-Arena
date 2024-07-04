@@ -9,6 +9,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@use 'postcss-for';
 
 @font-face {
   font-family: 'RacingSansOne-Regular';
@@ -92,6 +93,14 @@ select:-webkit-autofill:focus {
   color: white;
 }
 </style>
+
 <script setup lang="ts">
 import NotificationProvider from "~/components/NotificationProvider.vue";
+import {useAccount} from "~/store/accountStore";
+
+const accountStore = useAccount();
+
+onMounted(() => {
+  accountStore.checkAuth();
+});
 </script>

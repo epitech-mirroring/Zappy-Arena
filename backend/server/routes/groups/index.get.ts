@@ -5,7 +5,7 @@ import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const groups: (Group & {members: User[] })[] = await prisma.group.findMany() as any;
-    const userId = getHeader(event, 'X-User-Id');
+    const userId = event.context.uniqueId;
 
     for (let i = 0; i < groups.length; i++) {
         const group = groups[i];

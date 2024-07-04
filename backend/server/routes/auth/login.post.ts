@@ -1,11 +1,11 @@
 import {prisma} from "~/database";
-import {getHeader, readBody, setResponseStatus} from "h3";
-import {createTokenForUser} from "~/composables/users";
+import {readBody, setResponseStatus} from "h3";
 import {client} from "~/posthog";
+import {generateAccessToken, generateRefreshToken} from "~/composables/auth";
 
 export default eventHandler(async (event) => {
     const body = await readBody(event);
-    const userId = getHeader(event, 'X-User-Id');
+    const userId = event.context.uniqueId;
 
     client.capture({
         distinctId: userId || 'anonymous',
@@ -98,7 +98,8 @@ export default eventHandler(async (event) => {
         };
     }
 
-    const newToken = await createTokenForUser(user);
+    const refreshToken = await generateRefreshToken(user);
+    const accessToken = await generateAccessToken(user);
 
     client.capture({
         distinctId: user.id,
@@ -110,6 +111,7 @@ export default eventHandler(async (event) => {
 
     setResponseStatus(event,200);
     return {
-        token: newToken,
+        token: accessToken,
+        refreshToken: refreshToken
     }
 });

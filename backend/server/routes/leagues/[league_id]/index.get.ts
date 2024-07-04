@@ -7,7 +7,7 @@ export default eventHandler(async (event) => {
     // Get the name or id from the path
     const idOrName = getRouterParam(event, 'league_id');
     const isId = idOrName.startsWith('c');
-    const userId = getHeader(event, 'X-User-Id');
+    const userId = event.context.uniqueId;
 
     const league: League & {matches: Match[]} = await prisma.league.findFirst({
         where: {

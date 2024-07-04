@@ -1,7 +1,7 @@
 <template>
   <div id="notification-provider">
     <TransitionGroup name="notification" tag="ul" class="notifications">
-      <li v-for="notification in store.getNotifications" :key="notification.id">
+      <li v-for="notification in store.getOpenNotifications" :key="notification.id">
         <Notification :notification="notification" />
       </li>
     </TransitionGroup>

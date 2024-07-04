@@ -1,6 +1,5 @@
 import {getResponseStatus, readBody} from "h3";
 import {prisma} from "~/database";
-import {ErrorResponse, login} from "~/composables/users";
 import {User} from "@prisma/client";
 import {client} from "~/posthog";
 import {sendNotification} from "~/composables/notifications";
@@ -11,11 +10,7 @@ type GroupCreateBody = {
 
 export default eventHandler(async (event) => {
     const body = await readBody(event);
-    const loginResult: User | ErrorResponse = await login(event);
-    if (getResponseStatus(event) !== 200) {
-        return loginResult;
-    }
-    const user = loginResult as User;
+    const user = event.context.user as User;
 
     client.capture({
         distinctId: user.id,

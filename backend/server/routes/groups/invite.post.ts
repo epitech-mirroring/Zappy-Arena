@@ -1,6 +1,5 @@
 import {readBody} from "h3";
 import {User} from "@prisma/client";
-import {ErrorResponse, login} from "~/composables/users";
 import {prisma} from "~/database";
 import {inviteInGroup} from "~/composables/groups";
 import {sendNotification} from "~/composables/notifications";
@@ -8,11 +7,7 @@ import {client} from "~/posthog";
 
 export default eventHandler(async (event) => {
     const body = await readBody(event);
-    const loginResult: User | ErrorResponse = await login(event);
-    if (getResponseStatus(event) !== 200) {
-        return loginResult;
-    }
-    const user = loginResult as User;
+    const user = event.context.user as User;
 
 
     client.capture({
